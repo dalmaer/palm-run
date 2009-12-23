@@ -1,0 +1,86 @@
+#!/bin/sh
+# -----------------------------------------------------------------------------
+# palm-run [-d DEVICE] [-L] [-o DIRECTORY] [directory]
+#
+#   This command packages, installs, and then looks at the logs for a webOS
+#   application that you are developing.
+#
+#   -d DEVICE: Defaults to installing to the emulator. Use 'usb' for device
+#   -L       : By default the palm-log command is run. This suppresses that
+#   -o OUTPUT: By default the ipk is generated to /tmp
+#
+# Usage examples:
+# 
+#   palm-run ~/myproject # deploy from /tmp to emulator
+#   palm-run -d usb -L -o /packages ~/myproject
+#   palm-run # use the current directory and all the defaults
+# -----------------------------------------------------------------------------
+
+# -- Configuration settings
+device=tcp
+runlog="true"
+appdir=$PWD
+outputdir=/tmp
+
+numcount=0
+
+# read in the command line arguments
+while getopts "d:o:L" opt; do
+    case $opt in
+        d)
+            device=$OPTARG
+            let numcount=numcount+2
+            ;;
+        o)
+            outputdir=$OPTARG
+            let numcount=numcount+2
+            ;;
+        L)
+            runlog="false"
+            let numcount=numcount+1
+            ;;
+    esac
+done
+
+# shift over all of the arguments
+shift $numcount
+
+# if we have arguments left we have the directory we need
+if [ $# -gt 0 ]; then
+    appdir=$1
+fi
+
+# -- Get testing for the application directory and appinfo.json file to make sure this is a webOS app
+if [ ! -d "$appdir" ]; then
+    echo "No application directory found at $appdir"
+    exit
+fi
+
+if [ ! -e "$appdir/appinfo.json" ]; then
+    echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
+    exit
+fi
+
+# setup trim
+trim() { echo $1; }
+
+# grab the id out of the appinfo file
+id=`grep \"id\" $appdir/appinfo.json`
+id=${id//\"id\": \"/} # strip the beginning id
+id=${id//\",/}        # take out the end
+id=$(trim $id)
+
+# grab the version out of the appinfo file
+version=`grep \"version\" $appdir/appinfo.json`
+version=${version//\"version\": \"/} # strip the beginning id
+version=${version//\",/}        # take out the end
+version=$(trim $version)
+
+
+# -- Run the commands
+palm-package -o $outputdir $appdir
+palm-install -d $device $outputdir/${id}_${version}*.ipk
+
+if [ "$runlog" == "true" ]; then
+    palm-log -f -d $device $id
+fi
