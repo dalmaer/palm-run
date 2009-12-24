@@ -80,7 +80,9 @@ version=$(trim $version)
 # -- Run the commands
 palm-package -o $outputdir $appdir
 palm-install -d $device $outputdir/${id}_${version}*.ipk
+palm-launch -d $device $id
 
 if [ "$runlog" == "true" ]; then
     palm-log -f -d $device $id
 fi
+
