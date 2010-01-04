@@ -67,13 +67,15 @@ trim() { echo $1; }
 # grab the id out of the appinfo file
 id=`grep \"id\" $appdir/appinfo.json`
 id=${id//\"id\": \"/} # strip the beginning id
-id=${id//\",/}        # take out the end
+id=${id/%,/}
+id=${id/%\"/} # take out the end
 id=$(trim $id)
 
 # grab the version out of the appinfo file
 version=`grep \"version\" $appdir/appinfo.json`
 version=${version//\"version\": \"/} # strip the beginning id
-version=${version//\",/}        # take out the end
+version=${version/%,/}
+version=${version/%\"/} # take out the end
 version=$(trim $version)
 
 
