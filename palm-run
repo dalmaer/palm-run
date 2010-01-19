@@ -21,15 +21,19 @@ device=tcp
 runlog="true"
 appdir=$PWD
 outputdir=/tmp
-
+inspector=""
 numcount=0
 
 # read in the command line arguments
-while getopts "d:o:L" opt; do
+while getopts "d:o:iL" opt; do
     case $opt in
         d)
             device=$OPTARG
             let numcount=numcount+2
+            ;;
+        i)
+            inspector="-i"
+            let numcount=numcount+1
             ;;
         o)
             outputdir=$OPTARG
@@ -82,7 +86,7 @@ version=$(trim $version)
 # -- Run the commands
 palm-package -o $outputdir $appdir
 palm-install -d $device $outputdir/${id}_${version}*.ipk
-palm-launch -d $device $id
+palm-launch -d $device $inspector $id
 
 if [ "$runlog" == "true" ]; then
     palm-log -f -d $device $id
