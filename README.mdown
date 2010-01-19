@@ -1,11 +1,12 @@
 palm-run - helper script for webOS development
 ==============================================
 
-palm-run [-d DEVICE] [-L] [-o DIRECTORY] [directory]
+palm-run [-d DEVICE] [-L] [-i] [-o DIRECTORY] [directory]
 
 This command packages, installs, and then looks at the logs for a webOS application that you are developing.
 
 * -d DEVICE: Defaults to installing to the emulator. Use 'usb' for device
+* -i       : Passes "-i" to palm-launch to turn on inspection
 * -L       : By default the palm-log command is run. This suppresses that
 * -o OUTPUT: By default the ipk is generated to /tmp
 
