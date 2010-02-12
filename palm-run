@@ -20,8 +20,9 @@
 device=tcp
 runlog="true"
 appdir=$PWD
+appfilename=""
 outputdir=/tmp
-inspector=""
+inspector="-i"
 numcount=0
 
 # read in the command line arguments
@@ -31,8 +32,8 @@ while getopts "d:o:iL" opt; do
             device=$OPTARG
             let numcount=numcount+2
             ;;
-        i)
-            inspector="-i"
+        I)
+            inspector=""
             let numcount=numcount+1
             ;;
         o)
@@ -54,38 +55,47 @@ if [ $# -gt 0 ]; then
     appdir=$1
 fi
 
-# -- Get testing for the application directory and appinfo.json file to make sure this is a webOS app
-if [ ! -d "$appdir" ]; then
-    echo "No application directory found at $appdir"
-    exit
+# -- If it is a file, then it should be a ipk file
+# has to use the name: /path/to/ID_VERSION.ipk
+if [ -f $appdir ]; then
+    appfilename=$appdir
+    id=$(echo $appfilename | perl -e '@a = split "/", <>; ($id) = split "_", @a[-1]; chomp($id); print $id')
+# not a file, so test for the directory and package
+else
+    # -- Get testing for the application directory and appinfo.json file to make sure this is a webOS app
+    if [ ! -d "$appdir" ]; then
+        echo "No application directory found at $appdir"
+        exit
+    fi
+
+    if [ ! -e "$appdir/appinfo.json" ]; then
+        echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
+        exit
+    fi
+
+    # setup trim
+    trim() { echo $1; }
+
+    # grab the id out of the appinfo file
+    id=`grep \"id\" $appdir/appinfo.json`
+    id=${id//\"id\": \"/} # strip the beginning id
+    id=${id/%,/}
+    id=${id/%\"/} # take out the end
+    id=$(trim $id)
+
+    # grab the version out of the appinfo file
+    version=`grep \"version\" $appdir/appinfo.json`
+    version=${version//\"version\": \"/} # strip the beginning id
+    version=${version/%,/}
+    version=${version/%\"/} # take out the end
+    version=$(trim $version)
+
+    palm-package -o $outputdir $appdir
+    appfilename=$outputdir/${id}_${version}*.ipk
 fi
-
-if [ ! -e "$appdir/appinfo.json" ]; then
-    echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
-    exit
-fi
-
-# setup trim
-trim() { echo $1; }
-
-# grab the id out of the appinfo file
-id=`grep \"id\" $appdir/appinfo.json`
-id=${id//\"id\": \"/} # strip the beginning id
-id=${id/%,/}
-id=${id/%\"/} # take out the end
-id=$(trim $id)
-
-# grab the version out of the appinfo file
-version=`grep \"version\" $appdir/appinfo.json`
-version=${version//\"version\": \"/} # strip the beginning id
-version=${version/%,/}
-version=${version/%\"/} # take out the end
-version=$(trim $version)
-
 
 # -- Run the commands
-palm-package -o $outputdir $appdir
-palm-install -d $device $outputdir/${id}_${version}*.ipk
+palm-install -d $device $appfilename
 palm-launch -d $device $inspector $id
 
 if [ "$runlog" == "true" ]; then
