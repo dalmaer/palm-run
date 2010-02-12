@@ -12,8 +12,7 @@ This command packages, installs, and then looks at the logs for a webOS applicat
 
 Usage examples:
 --------------
-palm-run ~/myproject # deploy from /tmp to emulator
-palm-run -d usb -L -o /packages ~/myproject
-palm-run /path/to/com.palm.app.videogallery_1.0.1_all.ipk 
-         # has to be in the format of path/ID_VERSION.ipk
-palm-run # use the current directory and all the defaults
+* palm-run ~/myproject # deploy from /tmp to emulator
+* palm-run -d usb -L -o /packages ~/myproject
+* palm-run /path/to/com.palm.app.videogallery_1.0.1_all.ipk # has to be in the format of path/ID_VERSION.ipk
+* palm-run # use the current directory and all the defaults
