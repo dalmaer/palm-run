@@ -93,11 +93,13 @@ else
     version=${version/%\"/} # take out the end
     version=$(trim $version)
 
+    echo "=====> palm-package -o $outputdir $appdir"
     palm-package -o $outputdir $appdir
     appfilename=$outputdir/${id}_${version}*.ipk
 fi
 
 # -- Run the commands
+echo "\n=====> palm-install -d $device $appfilename"
 install_return=`palm-install -d $device $appfilename 2>&1`
 
 if [[ $install_return =~ "palm-install: no device" ]]; then
@@ -107,13 +109,17 @@ if [[ $install_return =~ "palm-install: no device" ]]; then
         echo "Unable to connect to the emulator.  Make sure that it is running."
     fi
     exit
+else 
+    echo $install_return
 fi
 
 if [ $runlog == "true" ]; then
     set -m
+    echo "\n=====> palm-log -f -d $device $id"
     palm-log -f -d $device $id &
 fi
 
+echo "\n=====> palm-launch -d $device $inspector $id"
 palm-launch -d $device $inspector $id
 
 if [ $runlog == "true" ]; then
