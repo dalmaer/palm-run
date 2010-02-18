@@ -29,7 +29,7 @@ inspector="-i"
 numcount=0
 
 # read in the command line arguments
-while getopts "d:o:iL" opt; do
+while getopts "d:o:IL" opt; do
     case $opt in
         d)
             device=$OPTARG
@@ -109,8 +109,13 @@ if [[ $install_return =~ "palm-install: no device" ]]; then
     exit
 fi
 
+if [ $runlog == "true" ]; then
+    set -m
+    palm-log -f -d $device $id &
+fi
+
 palm-launch -d $device $inspector $id
 
 if [ $runlog == "true" ]; then
-    palm-log -f -d $device $id
+    fg
 fi
