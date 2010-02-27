@@ -98,6 +98,9 @@ else
     appfilename=$outputdir/${id}_${version}*.ipk
 fi
 
+echo "\n=====> palm-remove -r $id"
+palm-install -r $id
+
 # -- Run the commands
 echo "\n=====> palm-install -d $device $appfilename"
 install_return=`palm-install -d $device $appfilename 2>&1`
