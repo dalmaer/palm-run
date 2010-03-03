@@ -97,7 +97,7 @@ else
     echo "=====> $cmd_package"
     package_return=`$cmd_package 2>&1`
 
-    if [[ $package_return =~ "no problems detected" ]]; then
+    if [[ $package_return =~ "creating package" ]]; then
         echo $package_return
     else
         echo $package_return
