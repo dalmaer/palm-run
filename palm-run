@@ -24,12 +24,15 @@ device=tcp
 runlog="true"
 appdir=$PWD
 appfilename=""
+exclude_from=""
+exclude_file="excludes.txt"
 outputdir=/tmp
+production="false"
 inspector="-i"
 numcount=0
 
 # read in the command line arguments
-while getopts "d:o:IL" opt; do
+while getopts "d:o:p:ILP" opt; do
     case $opt in
         d)
             device=$OPTARG
@@ -42,6 +45,14 @@ while getopts "d:o:IL" opt; do
         o)
             outputdir=$OPTARG
             let numcount=numcount+2
+            ;;
+        p)
+            exclude_file=$OPTARG
+            let numcount=numcount+2
+            ;;
+        P)
+            production="true"
+            let numcount=numcount+1
             ;;
         L)
             runlog="false"
@@ -93,7 +104,16 @@ else
     version=${version/%\"/} # take out the end
     version=$(trim $version)
 
-    cmd_package="palm-package -o $outputdir $appdir"
+    # TODO
+    #  if production, copy the production config over    
+    #  else, if development, copy the dev config over
+    
+    # if an exclusion file is found, --exclude-from it
+    if [ -e "$appdir/$exclude_file" ]; then
+        exclude_from="--exclude-from=$exclude_file"
+    fi
+
+    cmd_package="palm-package -o $outputdir $exclude_from $appdir"
     echo "=====> $cmd_package"
     package_return=`$cmd_package 2>&1`
 
