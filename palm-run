@@ -5,10 +5,11 @@
 #   This command packages, installs, and then looks at the logs for a webOS
 #   application that you are developing.
 #
-#   -d DEVICE: Defaults to installing to the emulator. Use 'usb' for device
+#   -d DEVICE: Defaults to installing to the first device
 #   -I       : By default palm-launch uses -i for inspector
 #   -L       : By default the palm-log command is run. This suppresses that
 #   -o OUTPUT: By default the ipk is generated to /tmp
+#   -p exfile: By default looks for 'excludes.txt' file
 #
 # Usage examples:
 # 
@@ -20,7 +21,7 @@
 # -----------------------------------------------------------------------------
 
 # -- Configuration settings
-device=tcp
+device=""
 runlog="true"
 appdir=$PWD
 appfilename=""
@@ -35,7 +36,7 @@ numcount=0
 while getopts "d:o:p:ILP" opt; do
     case $opt in
         d)
-            device=$OPTARG
+            device="-d $OPTARG"
             let numcount=numcount+2
             ;;
         I)
@@ -132,12 +133,12 @@ echo "\n=====> palm-remove -r $id"
 palm-install -r $id
 
 # -- Run the commands
-cmd_install="palm-install -d $device $appfilename"
+cmd_install="palm-install $device $appfilename"
 echo "\n=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
 if [[ $install_return =~ "palm-install: no device" ]]; then
-    if [ "$device" == "usb" ]; then
+    if [ "$device" == "-d usb" ]; then
         echo "Unable to connect to the phone.  Make sure that it is plugged into USB and in developer mode."
     else
         echo "Unable to connect to the emulator.  Make sure that it is running."
@@ -153,7 +154,7 @@ if [ $runlog == "true" ]; then
     palm-log -f -d $device $id &
 fi
 
-cmd_launch="palm-launch -d $device $inspector $id"
+cmd_launch="palm-launch $device $inspector $id"
 echo "\n=====> $cmd_launch"
 $cmd_launch
 
