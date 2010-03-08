@@ -28,7 +28,7 @@ runlog="true"
 appdir=$PWD
 appfilename=""
 exclude_from=""
-exclude_file="excludes.txt"
+excludes_file="excludes.txt"
 outputdir=/tmp
 production="false"
 inspector="-i"
@@ -50,7 +50,7 @@ while getopts "d:o:p:ILP" opt; do
             let numcount=numcount+2
             ;;
         p)
-            exclude_file=$OPTARG
+            excludes_file=$OPTARG
             let numcount=numcount+2
             ;;
         P)
@@ -107,13 +107,36 @@ else
     version=${version/%\"/} # take out the end
     version=$(trim $version)
 
-    # TODO
-    #  if production, copy the production config over    
-    #  else, if development, copy the dev config over
-    
-    # if an exclusion file is found, --exclude-from it
-    if [ -e "$appdir/$exclude_file" ]; then
-        exclude_from="--exclude-from=$exclude_file"
+    framework_config="$appdir/framework_config.json"
+
+    # if the config directory is available, do smart things for the given type of package
+    if [ -d "$appdir/config" ]; then
+        # set the extension type for use in the filename
+        if [ $production == "true" ]; then
+            type_ext="production"
+        else
+            type_ext="development"
+        fi
+        
+        # copy the framework config over to the right place
+        framework_config_by_type="$appdir/config/framework_${type_ext}.json"
+
+        if [ -e $framework_config_by_type ]; then
+            cp $framework_config_by_type $framework_config
+            delete_framework_config_after_package="true"
+        fi
+        
+        # if the excludes file exists, use that
+        excludes_file_by_type="$appdir/config/excludes_${type_ext}.txt"
+        
+        if [ -e $excludes_file_by_type ]; then
+            exclude_from="--exclude-from=$excludes_file_by_type"
+        fi
+    else
+        # if an exclusion file is found, --exclude-from it
+        if [ -e "$appdir/$excludes_file" ]; then
+            exclude_from="--exclude-from=$excludes_file"
+        fi
     fi
 
     cmd_package="palm-package -o $outputdir $exclude_from $appdir"
@@ -126,6 +149,11 @@ else
         echo $package_return
         echo "\nDue to palm-package error, aborting."
         exit
+    fi
+    
+    # delete the framework config that we loaded in from $framework_config_by_type instead
+    if [ $delete_framework_config_after_package == "true" ]; then
+        rm $framework_config
     fi
     
     appfilename=$outputdir/${id}_${version}*.ipk
