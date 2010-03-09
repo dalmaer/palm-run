@@ -57,6 +57,7 @@ while getopts "d:o:p:ILP" opt; do
             ;;
         P)
             production="true"
+            echo "*** Production Mode Turned On ***\n"
             let numcount=numcount+1
             ;;
         L)
@@ -114,7 +115,7 @@ else
     # if the config directory is available, do smart things for the given type of package
     if [ -d "$appdir/config" ]; then
         # set the extension type for use in the filename
-        if [ $production == "true" ]; then
+        if [ "$production" == "true" ]; then
             type_ext="production"
         else
             type_ext="development"
@@ -123,7 +124,8 @@ else
         # copy the framework config over to the right place
         framework_config_by_type="$appdir/config/framework_${type_ext}.json"
 
-        if [ -e $framework_config_by_type ]; then
+        if [ -e "$framework_config_by_type" ]; then
+            echo "Using framework config found at: $framework_config_by_type"
             cp $framework_config_by_type $framework_config
             delete_framework_config_after_package="true"
         fi
@@ -131,7 +133,8 @@ else
         # if the excludes file exists, use that
         excludes_file_by_type="$appdir/config/excludes_${type_ext}.txt"
         
-        if [ -e $excludes_file_by_type ]; then
+        if [ -e "$excludes_file_by_type" ]; then
+            echo "Using excludes file found at: $excludes_file_by_type"
             exclude_from="--exclude-from=$excludes_file_by_type"
         fi
     else
@@ -154,7 +157,7 @@ else
     fi
     
     # delete the framework config that we loaded in from $framework_config_by_type instead
-    if [ $delete_framework_config_after_package == "true" ]; then
+    if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
     fi
     
@@ -182,8 +185,9 @@ fi
 
 if [ $runlog == "true" ]; then
     set -m
-    echo "\n=====> palm-log -f -d $device $id"
-    palm-log -f -d $device $id &
+    cmd_log="palm-log -f $device $id"
+    echo "\n=====> $cmd_log"
+    $cmd_log &
 fi
 
 cmd_launch="palm-launch $device $inspector $id"
