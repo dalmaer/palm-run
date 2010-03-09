@@ -1,6 +1,6 @@
 #!/bin/sh
 # -----------------------------------------------------------------------------
-# palm-run [-d DEVICE] [-L] [-o DIRECTORY] [-p excludes.file] [directory | ipk]
+# palm-run [-d DEVICE] [-L] [-o DIRECTORY] [-p excludes.file] [-P] [directory | ipk]
 #
 #   This command packages, installs, and then looks at the logs for a webOS
 #   application that you are developing.
@@ -10,6 +10,7 @@
 #   -L       : By default the palm-log command is run. This suppresses that
 #   -o OUTPUT: By default the ipk is generated to /tmp
 #   -p exfile: By default looks for 'excludes.txt' file
+#   -P       : Turns on production mode (development by default)
 #
 # Usage examples:
 # 
@@ -19,6 +20,7 @@
 #            # has to be in the format of path/ID_VERSION.ipk
 #   palm-run -d tcp -p myexcludes.txt
 #            # use the emulator and package with exclude_from myexcludes.txt
+#   palm-run -P # looks for config/framework_production.json + config/excludes_production.txt
 #   palm-run # use the current directory and all the defaults
 # -----------------------------------------------------------------------------
 
