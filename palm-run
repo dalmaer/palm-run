@@ -148,7 +148,10 @@ else
     echo "=====> $cmd_package"
     package_return=`$cmd_package 2>&1`
 
-    if [[ $package_return =~ "creating package" ]]; then
+    # We want to test for the last token in the output being the start header, any additional output is a failures
+    successStr="in $outputdir"
+    testStr=${package_return:(-1*${#successStr})}
+    if [[ $testStr =~ $successStr ]]; then
         echo $package_return
     else
         echo $package_return
@@ -188,6 +191,7 @@ if [ $runlog == "true" ]; then
     cmd_log="palm-log -f $device $id"
     echo "\n=====> $cmd_log"
     $cmd_log &
+    sleep 1
 fi
 
 cmd_launch="palm-launch $device $inspector $id"
