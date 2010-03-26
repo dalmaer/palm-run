@@ -168,7 +168,7 @@ else
 fi
 
 echo "\n=====> palm-remove -r $id"
-palm-install -r $id
+palm-install -d $device -r $id
 
 # -- Run the commands
 cmd_install="palm-install $device $appfilename"
