@@ -148,14 +148,13 @@ else
     echo "=====> $cmd_package"
     package_return=`$cmd_package 2>&1`
 
-    if [[ $package_return =~ "creating package" ]]; then
-        echo $package_return
-    else
-        echo $package_return
-        echo "\nDue to palm-package error, aborting."
+    if [ "$?" -ne "0" ]; then
+        echo "\n$package_return\n\nDue to palm-package error, aborting."
         exit
     fi
-    
+
+    echo $package_return
+
     # delete the framework config that we loaded in from $framework_config_by_type instead
     if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
@@ -169,7 +168,7 @@ cmd_install="palm-install $device $appfilename"
 echo "\n=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
-if [[ $install_return =~ "palm-install: no device" ]]; then
+if [ "$?" -ne "0" ]; then
     if [ "$device" == "-d usb" ]; then
         echo "Unable to connect to the phone.  Make sure that it is plugged into USB and in developer mode."
     else
