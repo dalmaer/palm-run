@@ -124,7 +124,6 @@ if [ -f $appdir ]; then
     appId=$(echo $appfilename | perl -e '@a = split "/", <>; ($appId) = split "_", @a[-1]; chomp($appId); print $appId')
 # not a file, so test for the directory and package
 elif [ -e "$appdir/appinfo.json" ]; then
-    parseAppInfo
     appId=$(extractJsonString $appdir/appinfo.json "id")
     id=$appId
     version=$(extractJsonString $appdir/appinfo.json "version")
