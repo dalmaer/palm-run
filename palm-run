@@ -95,6 +95,24 @@ function parseAppInfo {
     version=${version/%\"/} # take out the end
     version=$(trim $version)
 }
+function package {
+    cmd_package="palm-package -o $outputdir $exclude_from $@"
+    echo "=====> $cmd_package"
+    package_return=`$cmd_package 2>&1`
+
+    # We want to test for the last token in the output being the start header, any additional output is a failures
+    successStr="in $outputdir"
+    testStr=${package_return:(-1*${#successStr})}
+    if [[ $testStr =~ $successStr ]]; then
+        echo $package_return
+    else
+        echo $package_return
+        echo "\nDue to palm-package error, aborting."
+        exit
+    fi
+
+    packageFilename=$outputdir/${id}_${version}*.ipk
+}
 
 # Run the default target of the Rakefile if one exists
 if [ -f "Rakefile" ]; then
@@ -104,7 +122,7 @@ fi
 # -- If it is a file, then it should be a ipk file
 # has to use the name: /path/to/ID_VERSION.ipk
 if [ -f $appdir ]; then
-    appfilename=$appdir
+    packageFilename=$appdir
     appId=$(echo $appfilename | perl -e '@a = split "/", <>; ($appId) = split "_", @a[-1]; chomp($appId); print $appId')
 # not a file, so test for the directory and package
 elif [ -e "$appdir/appinfo.json" ]; then
@@ -144,27 +162,13 @@ elif [ -e "$appdir/appinfo.json" ]; then
         fi
     fi
 
-    cmd_package="palm-package -o $outputdir $exclude_from $appdir"
-    echo "=====> $cmd_package"
-    package_return=`$cmd_package 2>&1`
+    package $appdir
 
-    # We want to test for the last token in the output being the start header, any additional output is a failures
-    successStr="in $outputdir"
-    testStr=${package_return:(-1*${#successStr})}
-    if [[ $testStr =~ $successStr ]]; then
-        echo $package_return
-    else
-        echo $package_return
-        echo "\nDue to palm-package error, aborting."
-        exit
-    fi
-    
     # delete the framework config that we loaded in from $framework_config_by_type instead
     if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
     fi
     
-    appfilename=$outputdir/${id}_${version}*.ipk
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
@@ -174,7 +178,7 @@ echo "\n=====> palm-remove -r $id"
 palm-install $device -r $id
 
 # -- Run the commands
-cmd_install="palm-install $device $appfilename"
+cmd_install="palm-install $device $packageFilename"
 echo "\n=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
