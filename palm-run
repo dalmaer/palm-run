@@ -144,6 +144,11 @@ else
         fi
     fi
 
+    # Run the default target of the Rakefile if one exists
+    if [ -f "Rakefile" ]; then
+        rake
+    fi
+
     cmd_package="palm-package -o $outputdir $exclude_from $appdir"
     echo "=====> $cmd_package"
     package_return=`$cmd_package 2>&1`
