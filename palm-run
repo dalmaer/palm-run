@@ -75,16 +75,12 @@ if [ $# -gt 0 ]; then
     appdir=$1
 fi
 
-# -- If it is a file, then it should be a ipk file
-# has to use the name: /path/to/ID_VERSION.ipk
-if [ -f $appdir ]; then
-    appfilename=$appdir
-    id=$(echo $appfilename | perl -e '@a = split "/", <>; ($id) = split "_", @a[-1]; chomp($id); print $id')
-# not a file, so test for the directory and package
-elif [ -e "$appdir/appinfo.json" ]; then
-    # setup trim
-    trim() { echo $1; }
-
+# Helper Functions
+##################
+function trim() {
+    echo $1;
+}
+function parseAppInfo {
     # grab the id out of the appinfo file
     id=`grep \"id\" $appdir/appinfo.json`
     id=${id//\"id\": \"/} # strip the beginning id
@@ -98,12 +94,21 @@ elif [ -e "$appdir/appinfo.json" ]; then
     version=${version/%,/}
     version=${version/%\"/} # take out the end
     version=$(trim $version)
+}
 
 # Run the default target of the Rakefile if one exists
 if [ -f "Rakefile" ]; then
     rake
 fi
 
+# -- If it is a file, then it should be a ipk file
+# has to use the name: /path/to/ID_VERSION.ipk
+if [ -f $appdir ]; then
+    appfilename=$appdir
+    id=$(echo $appfilename | perl -e '@a = split "/", <>; ($id) = split "_", @a[-1]; chomp($id); print $id')
+# not a file, so test for the directory and package
+elif [ -e "$appdir/appinfo.json" ]; then
+    parseAppInfo
     framework_config="$appdir/framework_config.json"
 
     # if the config directory is available, do smart things for the given type of package
