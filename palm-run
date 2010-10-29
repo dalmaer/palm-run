@@ -192,6 +192,21 @@ elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
             echo "Warning unknown app id found: $appId"
         fi
     done
+
+    # Find, validate, and stop the services
+    serviceList=( $services )
+    servideDirs=( )
+
+    for x in `find . -maxdepth 2 -name services.json`; do
+        serviceId=$(extractJsonString $x "id")
+
+        for index in `gseq 0 $((${#serviceList[*]}-1))`; do
+            if [[ "$serviceId" == "${serviceList[$index]}" ]]; then
+                serviceDirs[$index]=`dirname $x`
+                break
+            fi
+        done
+    done
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
