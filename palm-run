@@ -80,20 +80,9 @@ fi
 function trim() {
     echo $1;
 }
-function parseAppInfo {
-    # grab the id out of the appinfo file
-    appId=`grep \"id\" $appdir/appinfo.json`
-    appId=${appId//\"id\": \"/} # strip the beginning id
-    appId=${appId/%,/}
-    appId=${appId/%\"/} # take out the end
-    appId=$(trim $appId)
-
-    # grab the version out of the appinfo file
-    version=`grep \"version\" $appdir/appinfo.json`
-    version=${version//\"version\": \"/} # strip the beginning id
-    version=${version/%,/}
-    version=${version/%\"/} # take out the end
-    version=$(trim $version)
+function extractJsonString {
+    local line=`grep "$2" $1`
+    echo $line | sed "s/.*\"$2\"[^:]*:[^\"]\"\([^\"]*\)\".*/\1/"
 }
 function package {
     cmd_package="palm-package -o $outputdir $exclude_from $@"
@@ -127,7 +116,10 @@ if [ -f $appdir ]; then
 # not a file, so test for the directory and package
 elif [ -e "$appdir/appinfo.json" ]; then
     parseAppInfo
+    appId=$(extractJsonString $appdir/appinfo.json "id")
     id=$appId
+    version=$(extractJsonString $appdir/appinfo.json "version")
+
     framework_config="$appdir/framework_config.json"
 
     # if the config directory is available, do smart things for the given type of package
