@@ -81,18 +81,7 @@ if [ -f $appdir ]; then
     appfilename=$appdir
     id=$(echo $appfilename | perl -e '@a = split "/", <>; ($id) = split "_", @a[-1]; chomp($id); print $id')
 # not a file, so test for the directory and package
-else
-    # -- Get testing for the application directory and appinfo.json file to make sure this is a webOS app
-    if [ ! -d "$appdir" ]; then
-        echo "No application directory found at $appdir"
-        exit
-    fi
-
-    if [ ! -e "$appdir/appinfo.json" ]; then
-        echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
-        exit
-    fi
-
+elif [ -e "$appdir/appinfo.json" ]; then
     # setup trim
     trim() { echo $1; }
 
@@ -170,6 +159,9 @@ else
     fi
     
     appfilename=$outputdir/${id}_${version}*.ipk
+else
+    echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
+    exit
 fi
 
 echo "\n=====> palm-remove -r $id"
