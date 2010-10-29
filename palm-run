@@ -181,12 +181,12 @@ else
     exit
 fi
 
-echo "\n=====> palm-remove -r $id"
+echo "=====> palm-remove -r $id"
 palm-install $device -r $id
 
 # -- Run the commands
 cmd_install="palm-install $device $packageFilename"
-echo "\n=====> $cmd_install"
+echo "=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
 if [[ $install_return =~ "palm-install: no device" ]]; then
@@ -203,13 +203,13 @@ fi
 if [ $runlog == "true" ]; then
     set -m
     cmd_log="palm-log -f $device $appId"
-    echo "\n=====> $cmd_log"
+    echo "=====> $cmd_log"
     $cmd_log &
     sleep 1
 fi
 
 cmd_launch="palm-launch $device $inspector $appId"
-echo "\n=====> $cmd_launch"
+echo "=====> $cmd_launch"
 $cmd_launch
 
 if [ $runlog == "true" ]; then
