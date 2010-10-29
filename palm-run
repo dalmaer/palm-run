@@ -82,11 +82,11 @@ function trim() {
 }
 function parseAppInfo {
     # grab the id out of the appinfo file
-    id=`grep \"id\" $appdir/appinfo.json`
-    id=${id//\"id\": \"/} # strip the beginning id
-    id=${id/%,/}
-    id=${id/%\"/} # take out the end
-    id=$(trim $id)
+    appId=`grep \"id\" $appdir/appinfo.json`
+    appId=${appId//\"id\": \"/} # strip the beginning id
+    appId=${appId/%,/}
+    appId=${appId/%\"/} # take out the end
+    appId=$(trim $appId)
 
     # grab the version out of the appinfo file
     version=`grep \"version\" $appdir/appinfo.json`
@@ -109,6 +109,7 @@ if [ -f $appdir ]; then
 # not a file, so test for the directory and package
 elif [ -e "$appdir/appinfo.json" ]; then
     parseAppInfo
+    id=$appId
     framework_config="$appdir/framework_config.json"
 
     # if the config directory is available, do smart things for the given type of package
@@ -190,13 +191,13 @@ fi
 
 if [ $runlog == "true" ]; then
     set -m
-    cmd_log="palm-log -f $device $id"
+    cmd_log="palm-log -f $device $appId"
     echo "\n=====> $cmd_log"
     $cmd_log &
     sleep 1
 fi
 
-cmd_launch="palm-launch $device $inspector $id"
+cmd_launch="palm-launch $device $inspector $appId"
 echo "\n=====> $cmd_launch"
 $cmd_launch
 
