@@ -176,6 +176,22 @@ elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
 
     echo Loading package from $package using $package_info
     parsePackageInfo
+
+    # Find and validate the app
+    for x in `find . -maxdepth 2 -name appinfo.json`; do
+        appId=$(extractJsonString $x "id")
+        if [[ "$appId" == "$packageAppId" ]]; then
+            if [[ "$app_dir" ]]; then
+                echo "Warning found multiple application directories with id $appId"
+                exit
+            fi
+
+            app_dir=`dirname $x`
+            echo "Found app $appId in dir $app_dir"
+        else
+            echo "Warning unknown app id found: $appId"
+        fi
+    done
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
