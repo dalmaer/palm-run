@@ -84,6 +84,15 @@ function extractJsonString {
     local line=`grep "$2" $1`
     echo $line | sed "s/.*\"$2\"[^:]*:[^\"]\"\([^\"]*\)\".*/\1/"
 }
+function parsePackageInfo {
+    id=$(extractJsonString $package_info "id")
+    packageAppId=$(extractJsonString $package_info "app")
+    version=$(extractJsonString $package_info "version")
+
+    # Load the services
+    services=`awk '/"services"[ \t]*:/ { serviceSeen=1 } serviceSeen { printf("%s", $0); }serviceSeen && /\]/ { serviceSeen=0; }' $package_info`
+    services=`echo $services | sed -e 's/.*\[[ \t]*\(.*\)[ \t]*\]/\1/' -e 's/[^"]*"\([^"]*\)\"[^"]*/\1 /g'`
+}
 function package {
     cmd_package="palm-package -o $outputdir $exclude_from $@"
     echo "=====> $cmd_package"
@@ -160,7 +169,13 @@ elif [ -e "$appdir/appinfo.json" ]; then
     if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
     fi
-    
+elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
+    # Find the package info
+    package_info=`find . -maxdepth 2 -name packageinfo.json`
+    package_dir=`dirname "$package_info"`
+
+    echo Loading package from $package using $package_info
+    parsePackageInfo
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
