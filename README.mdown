@@ -1,13 +1,14 @@
 palm-run - helper script for webOS development
 ==============================================
 
-palm-run [-d DEVICE] [-L] [-o DIRECTORY] [-p excludes.file] [directory | ipk]
+palm-run [-d DEVICE] [-L] [-s serviceName] [-o DIRECTORY] [-p excludes.file] [directory | ipk]
 
 This command packages, installs, and then looks at the logs for a webOS application that you are developing.
 
 * -d DEVICE: Defaults to installing to the first device
 * -I       : By default palm-launch uses -i for inspector
 * -L       : By default the palm-log command is run. This suppresses that
+* -s serviceName : Runs the defined service.
 * -o OUTPUT: By default the ipk is generated to /tmp
 * -p exfile: By default looks for 'excludes.txt' file
 

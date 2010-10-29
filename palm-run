@@ -37,7 +37,7 @@ inspector="-i"
 numcount=0
 
 # read in the command line arguments
-while getopts "d:o:p:ILP" opt; do
+while getopts "d:o:s:p:ILP" opt; do
     case $opt in
         d)
             device="-d $OPTARG"
@@ -49,6 +49,10 @@ while getopts "d:o:p:ILP" opt; do
             ;;
         o)
             outputdir=$OPTARG
+            let numcount=numcount+2
+            ;;
+        s)
+            launchService=$OPTARG
             let numcount=numcount+2
             ;;
         p)
@@ -249,18 +253,22 @@ else
     echo $install_return
 fi
 
-if [ $runlog == "true" ]; then
-    set -m
-    cmd_log="palm-log -f $device $appId"
-    echo "=====> $cmd_log"
-    $cmd_log &
-    sleep 1
-fi
+if [ "$launchService" ]; then
+    novacom -- run file:///usr/bin/run-js-service /media/cryptofs/apps/usr/palm/services/com.palm.cot.service
+elif [ "$appId" ]; then
+    if [ $runlog == "true" ]; then
+        set -m
+        cmd_log="palm-log -f $device $appId"
+        echo "=====> $cmd_log"
+        $cmd_log &
+        sleep 1
+    fi
 
-cmd_launch="palm-launch $device $inspector $appId"
-echo "=====> $cmd_launch"
-$cmd_launch
+    cmd_launch="palm-launch $device $inspector $appId"
+    echo "=====> $cmd_launch"
+    $cmd_launch
 
-if [ $runlog == "true" ]; then
-    fg
+    if [ $runlog == "true" ]; then
+        fg
+    fi
 fi
