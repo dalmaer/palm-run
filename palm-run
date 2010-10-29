@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -----------------------------------------------------------------------------
 # palm-run [-d DEVICE] [-L] [-o DIRECTORY] [-p excludes.file] [-P] [directory | ipk]
 #
