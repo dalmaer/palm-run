@@ -130,6 +130,12 @@ elif [ -e "$appdir/appinfo.json" ]; then
 
     framework_config="$appdir/framework_config.json"
 
+    # Verify that this is not indented to be part of a package
+    if [[ `grep "requires_package.*true" $appdir/palm-run.properties` ]]; then
+        echo Attempting to build app that requires a package as standalone.
+        exit
+    fi
+
     # if the config directory is available, do smart things for the given type of package
     if [ -d "$appdir/config" ]; then
         # set the extension type for use in the filename
