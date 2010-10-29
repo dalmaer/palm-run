@@ -207,10 +207,23 @@ elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
             fi
         done
     done
+
+    # if an exclusion file is found, --exclude-from it
+    if [ -e "$appdir/$excludes_file" ]; then
+        exclude_from="--exclude-from=$excludes_file"
+    fi
+
+    package $package_dir $app_dir ${serviceDirs[*]}
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
 fi
+
+echo "=====> Stopping services"
+for index in `gseq 0 $((${#serviceList[*]}-1))`; do
+    echo "Stopping service ${serviceList[$index]}"
+    novacom -- run file:///usr/bin/luna-send -n 1 palm://${serviceList[$index]}/__quit '{}'
+done
 
 echo "=====> palm-remove -r $id"
 palm-install $device -r $id
