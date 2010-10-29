@@ -99,6 +99,11 @@ elif [ -e "$appdir/appinfo.json" ]; then
     version=${version/%\"/} # take out the end
     version=$(trim $version)
 
+# Run the default target of the Rakefile if one exists
+if [ -f "Rakefile" ]; then
+    rake
+fi
+
     framework_config="$appdir/framework_config.json"
 
     # if the config directory is available, do smart things for the given type of package
@@ -131,11 +136,6 @@ elif [ -e "$appdir/appinfo.json" ]; then
         if [ -e "$appdir/$excludes_file" ]; then
             exclude_from="--exclude-from=$excludes_file"
         fi
-    fi
-
-    # Run the default target of the Rakefile if one exists
-    if [ -f "Rakefile" ]; then
-        rake
     fi
 
     cmd_package="palm-package -o $outputdir $exclude_from $appdir"
