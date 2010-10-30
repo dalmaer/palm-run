@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -----------------------------------------------------------------------------
 # palm-run [-d DEVICE] [-L] [-o DIRECTORY] [-p excludes.file] [-P] [directory | ipk]
 #
@@ -30,14 +30,14 @@ runlog="true"
 appdir=$PWD
 appfilename=""
 exclude_from=""
-excludes_file="excludes.txt"
+excludes_file="package-excludes.txt"
 outputdir=/tmp
 production="false"
 inspector="-i"
 numcount=0
 
 # read in the command line arguments
-while getopts "d:o:p:ILP" opt; do
+while getopts "d:o:s:p:ILP" opt; do
     case $opt in
         d)
             device="-d $OPTARG"
@@ -49,6 +49,10 @@ while getopts "d:o:p:ILP" opt; do
             ;;
         o)
             outputdir=$OPTARG
+            let numcount=numcount+2
+            ;;
+        s)
+            launchService=$OPTARG
             let numcount=numcount+2
             ;;
         p)
@@ -75,42 +79,66 @@ if [ $# -gt 0 ]; then
     appdir=$1
 fi
 
+# Helper Functions
+##################
+function trim() {
+    echo $1;
+}
+function extractJsonString {
+    local line=`grep "$2" $1`
+    echo $line | sed "s/.*\"$2\"[^:]*:[^\"]\"\([^\"]*\)\".*/\1/"
+}
+function parsePackageInfo {
+    id=$(extractJsonString $package_info "id")
+    packageAppId=$(extractJsonString $package_info "app")
+    version=$(extractJsonString $package_info "version")
+
+    # Load the services
+    services=`awk '/"services"[ \t]*:/ { serviceSeen=1 } serviceSeen { printf("%s", $0); }serviceSeen && /\]/ { serviceSeen=0; }' $package_info`
+    services=`echo $services | sed -e 's/.*\[[ \t]*\(.*\)[ \t]*\]/\1/' -e 's/[^"]*"\([^"]*\)\"[^"]*/\1 /g'`
+}
+function package {
+    cmd_package="palm-package -o $outputdir $exclude_from $@"
+    echo "=====> $cmd_package"
+    package_return=`$cmd_package 2>&1`
+
+    # We want to test for the last token in the output being the start header, any additional output is a failures
+    successStr="in $outputdir"
+    testStr=${package_return:(-1*${#successStr})}
+    if [[ $testStr =~ $successStr ]]; then
+        echo $package_return
+    else
+        echo $package_return
+        echo "\nDue to palm-package error, aborting."
+        exit
+    fi
+
+    packageFilename=$outputdir/${id}_${version}*.ipk
+}
+
+# Run the default target of the Rakefile if one exists
+if [ -f "Rakefile" ]; then
+    rake
+fi
+
 # -- If it is a file, then it should be a ipk file
 # has to use the name: /path/to/ID_VERSION.ipk
 if [ -f $appdir ]; then
-    appfilename=$appdir
-    id=$(echo $appfilename | perl -e '@a = split "/", <>; ($id) = split "_", @a[-1]; chomp($id); print $id')
+    packageFilename=$appdir
+    appId=$(echo $appfilename | perl -e '@a = split "/", <>; ($appId) = split "_", @a[-1]; chomp($appId); print $appId')
 # not a file, so test for the directory and package
-else
-    # -- Get testing for the application directory and appinfo.json file to make sure this is a webOS app
-    if [ ! -d "$appdir" ]; then
-        echo "No application directory found at $appdir"
-        exit
-    fi
-
-    if [ ! -e "$appdir/appinfo.json" ]; then
-        echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
-        exit
-    fi
-
-    # setup trim
-    trim() { echo $1; }
-
-    # grab the id out of the appinfo file
-    id=`grep \"id\" $appdir/appinfo.json`
-    id=${id//\"id\": \"/} # strip the beginning id
-    id=${id/%,/}
-    id=${id/%\"/} # take out the end
-    id=$(trim $id)
-
-    # grab the version out of the appinfo file
-    version=`grep \"version\" $appdir/appinfo.json`
-    version=${version//\"version\": \"/} # strip the beginning id
-    version=${version/%,/}
-    version=${version/%\"/} # take out the end
-    version=$(trim $version)
+elif [ -e "$appdir/appinfo.json" ]; then
+    appId=$(extractJsonString $appdir/appinfo.json "id")
+    id=$appId
+    version=$(extractJsonString $appdir/appinfo.json "version")
 
     framework_config="$appdir/framework_config.json"
+
+    # Verify that this is not indented to be part of a package
+    if [[ `grep "requires_package.*true" $appdir/palm-run.properties` ]]; then
+        echo Attempting to build app that requires a package as standalone.
+        exit
+    fi
 
     # if the config directory is available, do smart things for the given type of package
     if [ -d "$appdir/config" ]; then
@@ -144,28 +172,74 @@ else
         fi
     fi
 
-    cmd_package="palm-package -o $outputdir $exclude_from $appdir"
-    echo "=====> $cmd_package"
-    package_return=`$cmd_package 2>&1`
-
-    if [ "$?" -ne "0" ]; then
-        echo "\n$package_return\n\nDue to palm-package error, aborting."
-        exit
-    fi
-
-    echo $package_return
+    package $appdir
 
     # delete the framework config that we loaded in from $framework_config_by_type instead
     if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
     fi
-    
-    appfilename=$outputdir/${id}_${version}*.ipk
+elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
+    # Find the package info
+    package_info=`find . -maxdepth 2 -name packageinfo.json`
+    package_dir=`dirname "$package_info"`
+
+    echo Loading package from $package using $package_info
+    parsePackageInfo
+
+    # Find and validate the app
+    for x in `find . -maxdepth 2 -name appinfo.json`; do
+        appId=$(extractJsonString $x "id")
+        if [[ "$appId" == "$packageAppId" ]]; then
+            if [[ "$app_dir" ]]; then
+                echo "Warning found multiple application directories with id $appId"
+                exit
+            fi
+
+            app_dir=`dirname $x`
+            echo "Found app $appId in dir $app_dir"
+        else
+            echo "Warning unknown app id found: $appId"
+        fi
+    done
+
+    # Find, validate, and stop the services
+    serviceList=( $services )
+    servideDirs=( )
+
+    for x in `find . -maxdepth 2 -name services.json`; do
+        serviceId=$(extractJsonString $x "id")
+
+        for index in `gseq 0 $((${#serviceList[*]}-1))`; do
+            if [[ "$serviceId" == "${serviceList[$index]}" ]]; then
+                serviceDirs[$index]=`dirname $x`
+                break
+            fi
+        done
+    done
+
+    # if an exclusion file is found, --exclude-from it
+    if [ -e "$appdir/$excludes_file" ]; then
+        exclude_from="--exclude-from=$excludes_file"
+    fi
+
+    package $package_dir $app_dir ${serviceDirs[*]}
+else
+    echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
+    exit
 fi
 
+echo "=====> Stopping services"
+for index in `gseq 0 $((${#serviceList[*]}-1))`; do
+    echo "Stopping service ${serviceList[$index]}"
+    novacom -- run file:///usr/bin/luna-send -n 1 palm://${serviceList[$index]}/__quit '{}'
+done
+
+echo "=====> palm-remove -r $id"
+palm-install $device -r $id
+
 # -- Run the commands
-cmd_install="palm-install $device $appfilename"
-echo "\n=====> $cmd_install"
+cmd_install="palm-install $device $packageFilename"
+echo "=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
 if [ "$?" -ne "0" ]; then
@@ -179,12 +253,22 @@ else
     echo $install_return
 fi
 
-cmd_launch="palm-launch $device $inspector $id"
-echo "\n=====> $cmd_launch"
-$cmd_launch
+if [ "$launchService" ]; then
+    novacom -- run file:///usr/bin/run-js-service /media/cryptofs/apps/usr/palm/services/com.palm.cot.service
+elif [ "$appId" ]; then
+    if [ $runlog == "true" ]; then
+        set -m
+        cmd_log="palm-log -f $device $appId"
+        echo "=====> $cmd_log"
+        $cmd_log &
+        sleep 1
+    fi
 
-if [ "$runlog" == "true" ]; then
-    cmd_log="palm-log -f $device $id"
-    echo "\n=====> $cmd_log"
-    $cmd_log
+    cmd_launch="palm-launch $device $inspector $appId"
+    echo "=====> $cmd_launch"
+    $cmd_launch
+
+    if [ $runlog == "true" ]; then
+        fg
+    fi
 fi
