@@ -96,6 +96,10 @@ function parsePackageInfo {
     # Load the services
     services=`awk '/"services"[ \t]*:/ { serviceSeen=1 } serviceSeen { printf("%s", $0); }serviceSeen && /\]/ { serviceSeen=0; }' $package_info`
     services=`echo $services | sed -e 's/.*\[[ \t]*\(.*\)[ \t]*\]/\1/' -e 's/[^"]*"\([^"]*\)\"[^"]*/\1 /g'`
+
+    # Load the accounts
+    accounts=`awk '/"accounts"[ \t]*:/ { accountSeen=1 } accountSeen { printf("%s", $0); }accountSeen && /\]/ { accountSeen=0; }' $package_info`
+    accounts=`echo $accounts | sed -e 's/.*\[[ \t]*\(.*\)[ \t]*\]/\1/' -e 's/[^"]*"\([^"]*\)\"[^"]*/\1 /g'`
 }
 function package {
     cmd_package="palm-package -o $outputdir $exclude_from $@"
@@ -221,12 +225,28 @@ elif [ `find . -name packageinfo.json` ]; then
         done
     done
 
+    # Find and validate the accounts
+    accountList=( $accounts )
+    accountDirs=( )
+
+    for x in `find . -name account-template.json`; do
+        echo $x
+        accountId=$(extractJsonString $x "templateId")
+
+        for index in `gseq 0 $((${#accountList[*]}-1))`; do
+            if [[ "$accountId" == "${accountList[$index]}" ]]; then
+                accountDirs[$index]=`dirname $x`
+                break
+            fi
+        done
+    done
+
     # if an exclusion file is found, --exclude-from it
     if [ -e "$appdir/$excludes_file" ]; then
         exclude_from="--exclude-from=$excludes_file"
     fi
 
-    package $package_dir $app_dir ${serviceDirs[*]}
+    package $package_dir $app_dir ${serviceDirs[*]} ${accountDirs[*]}
 else
     echo "No appinfo.json file found at $appdir/appinfo.json. This must not be a webOS application"
     exit
