@@ -266,7 +266,7 @@ cmd_install="palm-install $device $packageFilename"
 echo "=====> $cmd_install"
 install_return=`$cmd_install 2>&1`
 
-if [[ $install_return =~ "palm-install: no device" ]]; then
+if [ "$?" -ne "0" ]; then
     if [ "$device" == "-d usb" ]; then
         echo "Unable to connect to the phone.  Make sure that it is plugged into USB and in developer mode."
     else
