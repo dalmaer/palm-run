@@ -182,16 +182,16 @@ elif [ -e "$appdir/appinfo.json" ]; then
     if [ "$delete_framework_config_after_package" == "true" ]; then
         rm $framework_config
     fi
-elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
+elif [ `find . -name packageinfo.json` ]; then
     # Find the package info
-    package_info=`find . -maxdepth 2 -name packageinfo.json`
+    package_info=`find . -name packageinfo.json`
     package_dir=`dirname "$package_info"`
 
     echo Loading package from $package using $package_info
     parsePackageInfo
 
     # Find and validate the app
-    for x in `find . -maxdepth 2 -name appinfo.json`; do
+    for x in `find . -name appinfo.json`; do
         appId=$(extractJsonString $x "id")
         if [[ "$appId" == "$packageAppId" ]]; then
             if [[ "$app_dir" ]]; then
@@ -210,7 +210,7 @@ elif [ `find . -maxdepth 2 -name packageinfo.json` ]; then
     serviceList=( $services )
     servideDirs=( )
 
-    for x in `find . -maxdepth 2 -name services.json`; do
+    for x in `find . -name services.json`; do
         serviceId=$(extractJsonString $x "id")
 
         for index in `gseq 0 $((${#serviceList[*]}-1))`; do
