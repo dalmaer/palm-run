@@ -114,6 +114,10 @@ function package {
     fi
 
     packageFilename=$outputdir/${id}_${version}*.ipk
+
+    if [ -f ./postPackage.sh ]; then
+        ./postPackage.sh $packageFilename
+    fi
 }
 
 # Run the default target of the Rakefile if one exists
