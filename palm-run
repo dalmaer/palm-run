@@ -278,7 +278,7 @@ else
 fi
 
 if [ "$launchService" ]; then
-    novacom -- run file:///usr/bin/run-js-service /media/cryptofs/apps/usr/palm/services/com.palm.cot.service
+    novacom -- run file:///usr/bin/run-js-service "/media/cryptofs/apps/usr/palm/services/$launchService"
 elif [ "$appId" ]; then
     if [ $runlog == "true" ]; then
         set -m
